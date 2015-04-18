@@ -232,4 +232,4 @@ function run(options) {
 	mocha.run(istanbul.reporterCallback);
 }
 
-module.export = run;
+module.exports = run;
