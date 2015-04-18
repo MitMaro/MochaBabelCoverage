@@ -231,3 +231,5 @@ function run(options) {
 	initModuleRequire(options.babel, istanbulOpts, istanbul.instrumenter, sourceStore);
 	mocha.run(istanbul.reporterCallback);
 }
+
+module.export = run;
