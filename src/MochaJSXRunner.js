@@ -119,7 +119,7 @@ function initIstanbul(options, sourceStore) {
 		directory: 'coverage',
 		reporters: {
 			html: {},
-			text: {}	
+			text: {}
 		},
 		coverageVariable: '__istanbul_coverage__'
 	};
@@ -151,11 +151,11 @@ function initIstanbul(options, sourceStore) {
 }
 
 function initModuleRequire(babelOptions, istanbulOptions, instrumenter, sourceStore) {
-	
 	var babelInclude;
 	var babelExclude;
 	var istanbulOpts;
 	var babelOpts = {};
+
 	_.merge(babelOpts, babelOptions, {
 		sourceMap: 'inline' // must generate inline source maps
 	});
@@ -183,7 +183,7 @@ function initModuleRequire(babelOptions, istanbulOptions, instrumenter, sourceSt
 	}
 
 	Module._extensions['.js'] = function moduleExtension(module, filename) {
-		var match = minimatch.bind(null, filename);
+		var matcher = minimatch.bind(null, filename);
 		var src = fs.readFileSync(filename, {
 			encoding: 'utf8'
 		});
@@ -194,7 +194,7 @@ function initModuleRequire(babelOptions, istanbulOptions, instrumenter, sourceSt
 			return match.replace(/\t/g, Array(3).join(' '));
 		});
 
-		if (_.any(babelInclude, match) && !_.any(babelExclude, match)) {
+		if (_.any(babelInclude, matcher) && !_.any(babelExclude, matcher)) {
 			babelOpts.filename = filename;
 			try {
 				src = babel.transform(src, babelOpts).code;
@@ -203,7 +203,7 @@ function initModuleRequire(babelOptions, istanbulOptions, instrumenter, sourceSt
 			}
 		}
 
-		if (!_.any(istanbulOpts.exclude, match)) {
+		if (!_.any(istanbulOpts.exclude, matcher)) {
 			sourceStore.set(filename, addSourceComments(src));
 			try {
 				src = instrumenter.instrumentSync(src, filename);
@@ -223,6 +223,7 @@ function run(options) {
 	var istanbulOpts = {
 		exclude: ['**/node_modules/**/*'].concat(options.tests)
 	};
+
 	_.merge(istanbulOpts, options.istanbul);
 
 	mocha = initMocha(options.tests, options.mocha);
