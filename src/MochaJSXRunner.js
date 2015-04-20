@@ -32,6 +32,11 @@ function addSourceComments(source) {
 	generatedSource = source.split('\n');
 
 	sourceComment = source.match(/\n\/\/# sourceMappingURL=data:application\/json;base64,(.+)/);
+
+	if (!sourceComment) {
+		return source;
+	}
+
 	sourceMap = new SourceMapConsumer(new Buffer(sourceComment[1], 'base64').toString('utf8'));
 	originalLines = sourceMap.sourceContentFor(sourceMap.sources[0]).split('\n');
 
@@ -92,16 +97,10 @@ function addSourceComments(source) {
 	return output.join('\n');
 }
 
-function initMocha(testGlobs, options) {
+function initMocha(mocha, testGlobs) {
 	var i;
 	var j;
 	var files;
-	var opts = {};
-	var mocha;
-
-	_.merge(opts, options);
-
-	mocha = new Mocha(opts);
 
 	for (i = 0; i < testGlobs.length; i++) {
 		files = glob.sync(testGlobs[i]);
@@ -113,75 +112,23 @@ function initMocha(testGlobs, options) {
 	return mocha;
 }
 
-function initIstanbul(options, sourceStore) {
-	var instrumenter;
-	var opts = {
-		directory: 'coverage',
-		reporters: {
-			html: {},
-			text: {}
-		},
-		coverageVariable: '__istanbul_coverage__'
-	};
-
-	_.merge(opts, options);
-
-	global[opts.coverageVariable] = {};
-	instrumenter = new Istanbul.Instrumenter(opts);
-
+function initIstanbulCallback(sourceStore, collector, options) {
+	global[options.istanbul.coverageVariable] = {};
 	function reporterCallback() {
-		var collector = new Istanbul.Collector(opts.collector);
-
-		collector.add(global[opts.coverageVariable]);
-		_.forOwn(opts.reporters, function reporterIterator(reporterOptions, name) {
-			var reporterOpts = {
-				sourceStore: sourceStore, // include this always, not used by every reporter
-				dir: opts.directory // most (all?) reporters use this
-			};
-
-			_.merge(reporterOpts, reporterOptions);
-			Istanbul.Report.create(name, reporterOpts).writeReport(collector, true);
+		collector.add(global[options.istanbul.coverageVariable]);
+		_.forOwn(options.istanbul.reporters, function reporterIterator(reporterOptions, name) {
+			Istanbul.Report
+				.create(name, _.defaults({
+					sourceStore: sourceStore, // include this always, not used by every reporter
+					dir: options.istanbul.directory // most (all?) reporters use this
+				}, reporterOptions))
+				.writeReport(collector, true);
 		});
 	}
-
-	return {
-		reporterCallback: reporterCallback,
-		instrumenter: instrumenter
-	};
+	return reporterCallback;
 }
 
-function initModuleRequire(babelOptions, istanbulOptions, instrumenter, sourceStore) {
-	var babelInclude;
-	var babelExclude;
-	var istanbulOpts;
-	var babelOpts = {};
-
-	_.merge(babelOpts, babelOptions, {
-		sourceMap: 'inline' // must generate inline source maps
-	});
-	babelInclude = babelOpts.include || ['**/*.jsx', '**/*.js'];
-	babelExclude = babelOpts.exclude || ['**/node_modules/**/*'];
-	istanbulOpts = {
-		exclude: ['**/node_modules/**/*']
-	};
-
-	// babel complains when given unknown options
-	delete babelOpts.include;
-	delete babelOpts.exclude;
-	_.merge(istanbulOpts, istanbulOptions);
-
-	if (!_.isArray(babelInclude)) {
-		babelInclude = [babelInclude];
-	}
-
-	if (!_.isArray(babelExclude)) {
-		babelExclude = [babelExclude];
-	}
-
-	if (!_.isArray(istanbulOpts.exclude)) {
-		istanbulOpts.exclude = [istanbulOpts.exclude];
-	}
-
+function initModuleRequire(instrumenter, sourceStore, options) {
 	Module._extensions['.js'] = function moduleExtension(module, filename) {
 		var matcher = minimatch.bind(null, filename);
 		var src = fs.readFileSync(filename, {
@@ -193,17 +140,16 @@ function initModuleRequire(babelOptions, istanbulOptions, instrumenter, sourceSt
 			// hard code to 2 spaces per tabs for now, istanbul uses 2
 			return match.replace(/\t/g, Array(3).join(' '));
 		});
-
-		if (_.any(babelInclude, matcher) && !_.any(babelExclude, matcher)) {
-			babelOpts.filename = filename;
+		if (_.any(options.babelInclude, matcher) && !_.any(options.babelExclude, matcher)) {
+			options.babel.filename = filename;
 			try {
-				src = babel.transform(src, babelOpts).code;
+				src = babel.transform(src, options.babel).code;
 			} catch (e) {
 				throw new Error('Error during babel transform - ' + filename + ': \n' + e.toString());
 			}
 		}
 
-		if (!_.any(istanbulOpts.exclude, matcher)) {
+		if (!_.any(options.istanbul.exclude, matcher)) {
 			sourceStore.set(filename, addSourceComments(src));
 			try {
 				src = instrumenter.instrumentSync(src, filename);
@@ -214,22 +160,83 @@ function initModuleRequire(babelOptions, istanbulOptions, instrumenter, sourceSt
 
 		module._compile(src, filename);
 	};
+	return Module._extensions['.js'];
 }
 
-function run(options) {
+function defaults(options) {
+	var i;
+	var opts = {};
+	opts.tests = options.tests? options.tests.slice(0): ['test/**/*.js'];
+	opts.istanbul = _.defaults({}, options.istanbul, {
+		directory: 'coverage',
+		reporters: {
+			html: {},
+			text: {}
+		},
+		collector: {},
+		instrumenter: {},
+		coverageVariable: '__istanbul_coverage__',
+		exclude: []
+	});
+	opts.istanbul.instrumenter.coverageVariable = '__istanbul_coverage__';
+
+	// add tests directories and node modules to the istanbul ignore
+	for (i = 0; i < opts.tests.length; i++) {
+		if (opts.tests[i][0] !== '/' && opts.tests[i].substr(0, 2) !== '**') {
+			opts.istanbul.exclude.push('**/' + opts.tests[i]);
+		}
+	}
+	opts.istanbul.exclude.push('**/node_modules/**/*');
+
+	opts.mocha = _.defaults({}, options.mocha);
+	
+	opts.babel = _.defaults({
+			sourceMap: 'inline'
+		}, options.babel, {
+			include: ['**/*.jsx', '**/*.js'],
+			exclude: []
+		}
+	);
+
+	opts.babel.exclude.push('**/node_modules/**/*');
+
+	opts.babelInclude = opts.babel.include;
+	opts.babelExclude = opts.babel.exclude;
+
+	delete opts.babel.include;
+	delete opts.babel.exclude;
+
+	if (!_.isArray(opts.babelInclude)) {
+		opts.babelInclude = [opts.babelInclude];
+	}
+
+	if (!_.isArray(opts.babelExclude)) {
+		opts.babelExclude = [opts.babelExclude];
+	}
+
+	return _.cloneDeep(opts);
+}
+
+var run = function run(options) {
 	var mocha;
-	var istanbul;
+	var istanbulCallback;
+	var instrumenter;
+	var collector;
+	var mocha;
 	var sourceStore = Istanbul.Store.create('memory');
-	var istanbulOpts = {
-		exclude: ['**/node_modules/**/*'].concat(options.tests)
-	};
+	var opts = defaults(options);
 
-	_.merge(istanbulOpts, options.istanbul);
+	instrumenter = new Istanbul.Instrumenter(opts.istanbul.instrumenter);
+	collector = new Istanbul.Collector(opts.istanbul.collector);
+	mocha = new Mocha(opts.mocha);
 
-	mocha = initMocha(options.tests, options.mocha);
-	istanbul = initIstanbul(istanbulOpts, sourceStore);
-	initModuleRequire(options.babel, istanbulOpts, istanbul.instrumenter, sourceStore);
-	mocha.run(istanbul.reporterCallback);
+	initMocha(mocha, opts.tests);
+	initModuleRequire(instrumenter, sourceStore, opts);
+	istanbulCallback = initIstanbulCallback(
+		sourceStore, collector, opts
+	);
+
+	mocha.run(istanbulCallback);
 }
 
 module.exports = run;
