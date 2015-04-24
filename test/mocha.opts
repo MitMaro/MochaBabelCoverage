@@ -1,0 +1,6 @@
+--require mocha-bootstrap.js
+--recursive
+--check-leaks
+--reporter spec
+--inline-diffs
+--globals __istanbul_coverage__

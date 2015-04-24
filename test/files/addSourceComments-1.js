@@ -1,0 +1,9 @@
+"use strict";
+
+var obj = {
+  myFunc: function myFunc(a, b, c) {
+    return a + b + c;
+  }
+};
+
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbInRlc3QvZmlsZXMvYWRkU291cmNlQ29tbWVudHMtMS5vcmlnLmpzIl0sIm5hbWVzIjpbXSwibWFwcGluZ3MiOiI7O0FBQUEsSUFBSSxHQUFHLEdBQUc7QUFDUixRQUFNLEVBQUUsZ0JBQUMsQ0FBQyxFQUFFLENBQUMsRUFBRSxDQUFDLEVBQUs7QUFDbkIsV0FBTyxDQUFDLEdBQUcsQ0FBQyxHQUFHLENBQUMsQ0FBQztHQUNsQjtDQUNGLENBQUMiLCJmaWxlIjoic3Rkb3V0Iiwic291cmNlc0NvbnRlbnQiOlsidmFyIG9iaiA9IHtcbiAgbXlGdW5jOiAoYSwgYiwgYykgPT4ge1xuICAgIHJldHVybiBhICsgYiArIGM7XG4gIH1cbn07XG4iXX0=

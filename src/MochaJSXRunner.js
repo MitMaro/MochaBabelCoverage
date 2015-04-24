@@ -138,26 +138,24 @@ function initModuleRequire(instrumenter, sourceStore, options) {
 		// replace tabs with spaces
 		src = src.replace(/^\t+/gm, function tabsReplace(match) {
 			// hard code to 2 spaces per tabs for now, istanbul uses 2
-			return match.replace(/\t/g, Array(3).join(' '));
+			return match.replace(/\t/g, '  ');
 		});
 		if (_.any(options.babelInclude, matcher) && !_.any(options.babelExclude, matcher)) {
 			options.babel.filename = filename;
 			try {
 				src = babel.transform(src, options.babel).code;
 			} catch (e) {
-				throw new Error('Error during babel transform - ' + filename + ': \n' + e.toString());
+				throw new Error('Error during babel transform - ' + filename + ': \n' + e.message);
 			}
 		}
-
 		if (!_.any(options.istanbul.exclude, matcher)) {
 			sourceStore.set(filename, addSourceComments(src));
 			try {
 				src = instrumenter.instrumentSync(src, filename);
 			} catch (e) {
-				throw new Error('Error during istanbul instrument - ' + filename + ': \n' + e.toString());
+				throw new Error('Error during istanbul instrument - ' + filename + ': \n' + e.message);
 			}
 		}
-
 		module._compile(src, filename);
 	};
 	return Module._extensions['.js'];
