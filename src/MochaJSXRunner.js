@@ -3,12 +3,13 @@
 var _ = require('lodash');
 var fs = require('fs');
 var Module = require('module');
-var babel = require('babel');
-var Istanbul = require('istanbul');
-var Mocha = require('mocha');
 var SourceMapConsumer = require('source-map').SourceMapConsumer;
 var glob = require('glob');
 var minimatch = require('minimatch');
+
+var babel = require('babel');
+var Istanbul = require('istanbul');
+var Mocha = require('mocha');
 
 function padRight(str, length) {
 	return str + Array(length - str.length + 1).join(' ');

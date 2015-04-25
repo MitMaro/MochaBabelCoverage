@@ -1,32 +1,37 @@
 {
   "name": "mocha-jsx-runner",
   "version": "0.0.1",
+  "author": "Tim Oram <mitmaro@gmail.com>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/MitMaro/MochaJSXRunner/issues"
+  },
+  "homepage": "https://github.com/MitMaro/MochaJSXRunner",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MitMaro/MochaJSXRunner"
+  },
   "description": "Run Mocha JSX tests with Istanbul coverage and sourcemaps.",
   "main": "src/MochaJSXRunner.js",
   "dependencies": {
-    "babel": "^5.1.10",
     "glob": "^5.0.5",
-    "istanbul": "^0.3.13",
-    "jsdom": "^3.1.2",
     "lodash": "^3.6.0",
     "minimatch": "^2.0.4",
-    "mocha": "^2.2.4",
-    "react": "^0.12.2",
     "source-map": "^0.4.2"
   },
   "devDependencies": {
     "chai": "^2.2.0",
-    "mocha": "^2.2.4",
     "rewire": "^2.3.1",
     "sinon": "^1.14.1",
     "sinon-chai": "^2.7.0"
   },
+  "peerDependencies": {
+    "mocha": "2.x",
+    "babel": "5.x",
+    "istanbul": "0.3.x"
+  },
   "scripts": {
     "test": "istanbul cover -- ./node_modules/.bin/_mocha test/MochaJSXRunner-test.js"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/MitMaro/MochaJSXRunner"
   },
   "keywords": [
     "Mocha",
@@ -35,11 +40,5 @@
     "jsx",
     "sourcemaps",
     "babel"
-  ],
-  "author": "Tim Oram <mitmaro@gmail.com>",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/MitMaro/MochaJSXRunner/issues"
-  },
-  "homepage": "https://github.com/MitMaro/MochaJSXRunner"
+  ]
 }
