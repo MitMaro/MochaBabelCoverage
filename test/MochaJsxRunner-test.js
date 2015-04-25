@@ -26,10 +26,12 @@ describe('Mocha JSX Runner', function() {
 		};
 
 		mochaStub = {
-			addFile: sinon.stub()
+			addFile: sinon.stub(),
+			run: sinon.stub()
 		};
 
-		MochaStub = sinon.stub().returns(mochaStub);
+		MochaStub = sinon.stub();
+		MochaStub.prototype = mochaStub;
 
 		GlobStub = {
 			sync: sinon.stub()
@@ -51,7 +53,10 @@ describe('Mocha JSX Runner', function() {
 			Report: {
 				create: sinon.stub().returns(reporterStub)
 			},
-			Collector: collectorStub
+			Collector: collectorStub,
+			Store: {
+				create: sinon.stub().returns('memory')
+			}
 		};
 
 		ModuleStub = {
@@ -75,30 +80,30 @@ describe('Mocha JSX Runner', function() {
 		MochaJSXRunner.__set__('fs', fsStub);
 	});
 
-	describe('padRight', function() {
+	describe('#padRight', function() {
 		var padRight;
 
 		beforeEach(function() {
 			padRight = MochaJSXRunner.__get__('padRight');
 		});
 
-		it('will pad short string', function() {
+		it('should pad short string', function() {
 			expect(padRight('aaa', 6)).to.equal('aaa   ');
 		});
 
-		it('will pad long string', function() {
+		it('should pad long string', function() {
 			expect(padRight('aaaaaaa', 6)).to.equal('aaaaaaa');
 		});
 	});
 
-	describe('addSourceComments', function() {
+	describe('#addSourceComments', function() {
 		var addSourceComments;
 
 		beforeEach(function() {
 			addSourceComments = MochaJSXRunner.__get__('addSourceComments');
 		});
 
-		it('simple single line mapping', function() {
+		it('should accept simple single line mapping', function() {
 			var src = fs.readFileSync(path.join(__dirname, 'files', 'addSourceComments-1.js'), {
 				encoding: 'utf8'
 			});
@@ -110,7 +115,7 @@ describe('Mocha JSX Runner', function() {
 			expect(addSourceComments(src)).to.equal(expected);
 		});
 
-		it('mulit line mapping', function() {
+		it('should accept mulit-line mapping', function() {
 			var src = fs.readFileSync(path.join(__dirname, 'files', 'addSourceComments-2.js'), {
 				encoding: 'utf8'
 			});
@@ -123,14 +128,14 @@ describe('Mocha JSX Runner', function() {
 		});
 	});
 
-	describe('initMocha', function() {
+	describe('#initMocha', function() {
 		var initMocha;
 
 		beforeEach(function() {
 			initMocha = MochaJSXRunner.__get__('initMocha');
 		});
 
-		it('with globs and files', function() {
+		it('should accept globs and files', function() {
 			var globs = [
 				'ab', 'cd'
 			];
@@ -148,7 +153,7 @@ describe('Mocha JSX Runner', function() {
 			expect(result).to.eql(mochaStub);
 		});
 
-		it('with no globs', function() {
+		it('should accept no globs', function() {
 			var globs = [];
 			var result = initMocha(mochaStub, globs);
 
@@ -157,7 +162,7 @@ describe('Mocha JSX Runner', function() {
 			expect(result).to.eql(mochaStub);
 		});
 
-		it('with no files', function() {
+		it('should accept no files', function() {
 			var globs = [
 				'ab'
 			];
@@ -175,7 +180,7 @@ describe('Mocha JSX Runner', function() {
 		});
 	});
 
-	describe('initIstanbulCallback', function() {
+	describe('#initIstanbulCallback', function() {
 		var initIstanbulCallback;
 		var coverageVariable = '__istanbul_coverage__';
 
@@ -188,7 +193,7 @@ describe('Mocha JSX Runner', function() {
 			delete global[coverageVariable];
 		});
 
-		it('no reporters', function() {
+		it('should accept no reporters', function() {
 			var callback = initIstanbulCallback(sourceStoreStub, collectorStub, {
 				istanbul: {
 					coverageVariable: coverageVariable,
@@ -203,7 +208,7 @@ describe('Mocha JSX Runner', function() {
 			expect(global[coverageVariable]).to.eql({});
 		});
 
-		it('with reporters', function() {
+		it('should accept reporters', function() {
 			var callback = initIstanbulCallback(sourceStoreStub, collectorStub, {
 				istanbul: {
 					coverageVariable: coverageVariable,
@@ -222,7 +227,7 @@ describe('Mocha JSX Runner', function() {
 		});
 	});
 
-	describe('initModuleRequire', function() {
+	describe('#initModuleRequire', function() {
 		var initModuleRequire;
 		var moduleExtension;
 
@@ -239,7 +244,7 @@ describe('Mocha JSX Runner', function() {
 			});
 		});
 
-		it('with babel unmatching file that is not babel excluded', function() {
+		it('should accept babel unmatching file that is not babel excluded', function() {
 			fsStub.readFileSync.returns('source file content');
 
 			moduleExtension(ModuleStub, '/istanbul_exclude/');
@@ -250,7 +255,7 @@ describe('Mocha JSX Runner', function() {
 			expect(ModuleStub._compile).to.be.calledWith('source file content', '/istanbul_exclude/');
 		});
 
-		it('with babel matching file that is not babel excluded', function() {
+		it('should accept babel matching file that is not babel excluded', function() {
 			fsStub.readFileSync.returns('source file content');
 			babelStub.transform.returns({
 				code: 'babel source file content'
@@ -266,7 +271,7 @@ describe('Mocha JSX Runner', function() {
 			expect(ModuleStub._compile).to.be.calledWith('babel source file content', '/babel_include/istanbul_exclude/');
 		});
 
-		it('with non-matching babel file that is istanbul included', function() {
+		it('should accept non-matching babel file that is istanbul included', function() {
 			fsStub.readFileSync.returns('source file content');
 			instrumenterStub.instrumentSync.returns('istanbul instrumenter source file stub')
 
@@ -278,7 +283,7 @@ describe('Mocha JSX Runner', function() {
 			expect(ModuleStub._compile).to.be.calledWith('istanbul instrumenter source file stub', '/babel_exclude/istanbul_include/');
 		});
 
-		it('with matching babel file that is istanbul included', function() {
+		it('should accept matching babel file that is istanbul included', function() {
 			fsStub.readFileSync.returns('source file content');
 			babelStub.transform.returns({
 				code: 'babel source file content'
@@ -295,7 +300,7 @@ describe('Mocha JSX Runner', function() {
 			expect(ModuleStub._compile).to.be.calledWith('istanbul instrumenter source file stub', '/babel_include/istanbul_include/');
 		});
 
-		it('can convert tabs', function() {
+		it('should convert tabs', function() {
 			fsStub.readFileSync.returns('\t\tabc\n\tdef');
 
 			moduleExtension(ModuleStub, '/babel_exclude/istanbul_exclude/');
@@ -304,7 +309,7 @@ describe('Mocha JSX Runner', function() {
 			expect(ModuleStub._compile).to.be.calledWith('    abc\n  def', '/babel_exclude/istanbul_exclude/');
 		});
 
-		it('will catch a babel error', function() {
+		it('should catch a babel error', function() {
 			fsStub.readFileSync.returns('source file content');
 			babelStub.transform.throws(new Error('msg'));
 
@@ -312,7 +317,7 @@ describe('Mocha JSX Runner', function() {
 				.to.throw('Error during babel transform - /babel_include/istanbul_exclude/: \nmsg');
 		});
 
-		it('will catch a babel error', function() {
+		it('should catch a babel error', function() {
 			fsStub.readFileSync.returns('source file content');
 			instrumenterStub.instrumentSync.throws(new Error('msg'));
 
@@ -320,5 +325,208 @@ describe('Mocha JSX Runner', function() {
 				.to.throw('Error during istanbul instrument - /babel_exclude/istanbul_include/: \nmsg');
 		});
 
+	});
+
+	describe('#defaults', function() {
+		var defaults;
+
+		beforeEach(function() {
+			defaults = MochaJSXRunner.__get__('defaults');
+		});
+
+		it('should have defaults when no options provided', function() {
+			var opts = defaults({});
+
+			expect(opts).to.eql({
+				tests: ['test/**/*.js'],
+				istanbul: {
+					directory: 'coverage',
+					reporters: {
+						html: {},
+						text: {}
+					},
+					collector: {},
+					instrumenter: {
+						coverageVariable: '__istanbul_coverage__'
+					},
+					coverageVariable: '__istanbul_coverage__',
+					exclude: [
+						'**/test/**/*.js',
+						'**/node_modules/**/*'
+					]
+				},
+				mocha: {},
+				babel: {
+					sourceMap: 'inline'
+				},
+				babelInclude: ['**/*.jsx', '**/*.js'],
+				babelExclude: ['**/node_modules/**/*']
+			});
+		});
+
+		it('should accept tests array option', function() {
+			var opts = defaults({
+				tests: ['abc']
+			});
+
+			expect(opts.tests).to.eql(['abc']);
+			expect(opts.istanbul.exclude).to.eql([
+				'**/abc',
+				'**/node_modules/**/*'
+			]);
+		});
+
+		it('should accept tests string option', function() {
+			var opts = defaults({
+				tests: 'abc'
+			});
+
+			expect(opts.tests).to.eql(['abc']);
+			expect(opts.istanbul.exclude).to.eql([
+				'**/abc',
+				'**/node_modules/**/*'
+			]);
+		});
+
+		it('should override istanbul directory', function() {
+			var opts = defaults({
+				istanbul: {
+					directory: 'foo',
+					reporters: {
+						foo: {}
+					},
+					collector: {
+						abar: 'avalue'
+					},
+					instrumenter: {
+						bbar: 'bvalue'
+					},
+					coverageVariable: 'coverVar',
+					exclude: [
+						'lkj'
+					]
+				}
+			});
+
+			expect(opts.istanbul).to.eql({
+				directory: 'foo',
+				reporters: {
+					foo: {}
+				},
+				collector: {
+					abar: 'avalue'
+				},
+				instrumenter: {
+					bbar: 'bvalue',
+					coverageVariable: 'coverVar'
+				},
+				coverageVariable: 'coverVar',
+				exclude: [
+					'lkj',
+					'**/test/**/*.js',
+					'**/node_modules/**/*'
+				]
+			});
+		});
+
+		it('should add exclude properly with tests leading with ** or /', function() {
+			var opts = defaults({
+				tests: [
+					'**/abc',
+					'/abc'
+				]
+			});
+
+			expect(opts.istanbul.exclude).to.eql([
+				'**/abc',
+				'/abc',
+				'**/node_modules/**/*'
+			]);
+		});
+
+		it('should accept string babel include and exclude', function() {
+			var opts = defaults({
+				babel: {
+					include: 'abc',
+					exclude: 'def'
+				}
+			});
+
+			expect(opts.babelInclude).to.eql(['abc']);
+			expect(opts.babelExclude).to.eql([
+				'def',
+				'**/node_modules/**/*'
+			]);
+		});
+
+		it('should override mocha options', function() {
+			var opts = defaults({
+				mocha: {
+					foo: 'bar'
+				}
+			});
+
+			expect(opts.mocha).to.eql({
+				foo: 'bar'
+			});
+		});
+
+		it('should accept babel options', function() {
+			var opts = defaults({
+				babel : {
+					foo: 'value'
+				}
+			});
+
+			expect(opts.babel).to.eql({
+				sourceMap: 'inline',
+				foo: 'value'
+			});
+		});
+	});
+
+	describe('#run', function() {
+		var run;
+		var defaultsStub;
+		var initMochaStub;
+		var initModuleRequireStub;
+		var initIstanbulCallbackStub;
+
+		beforeEach(function() {
+			defaultsStub = sinon.stub();
+			defaultsStub.returnsArg(0);
+			initMochaStub = sinon.stub();
+			initModuleRequireStub = sinon.stub();
+			initIstanbulCallbackStub = sinon.stub();
+			run = MochaJSXRunner.__get__('run');
+			MochaJSXRunner.__set__('defaults', defaultsStub);
+			MochaJSXRunner.__set__('initMocha', initMochaStub);
+			MochaJSXRunner.__set__('initModuleRequire', initModuleRequireStub);
+			MochaJSXRunner.__set__('initIstanbulCallback', initIstanbulCallbackStub);
+		});
+
+		it('should should', function() {
+			var opts = {
+				tests: 'tests',
+				istanbul: {
+					instrumenter: 'instrumenter',
+					collector: 'collector'
+				},
+				mocha: 'mocha'
+			};
+			var istanbulCallback = {};
+			initIstanbulCallbackStub.returns(istanbulCallback);
+
+			run(opts);
+
+			expect(defaultsStub).to.be.called;
+			expect(IstanbulStub.Instrumenter).to.be.called;
+			expect(IstanbulStub.Collector).to.be.called;
+			expect(initMochaStub).to.be.called;
+			expect(initModuleRequireStub).to.be.called;
+			expect(initIstanbulCallbackStub).to.be.called;
+			expect(mochaStub.run).to.be.called;
+
+		});
 	});
 });

@@ -164,7 +164,7 @@ function initModuleRequire(instrumenter, sourceStore, options) {
 function defaults(options) {
 	var i;
 	var opts = {};
-	opts.tests = options.tests? options.tests.slice(0): ['test/**/*.js'];
+	opts.tests = options.tests? options.tests: ['test/**/*.js'];
 	opts.istanbul = _.defaults({}, options.istanbul, {
 		directory: 'coverage',
 		reporters: {
@@ -176,12 +176,22 @@ function defaults(options) {
 		coverageVariable: '__istanbul_coverage__',
 		exclude: []
 	});
-	opts.istanbul.instrumenter.coverageVariable = '__istanbul_coverage__';
+	opts.istanbul.instrumenter.coverageVariable = opts.istanbul.coverageVariable;
 
+	if (!_.isArray(opts.tests)) {
+		opts.tests = [opts.tests];
+	}
+
+	if (options.istanbul && options.istanbul.reporters) {
+		opts.istanbul.reporters = options.istanbul.reporters;
+	}
+	
 	// add tests directories and node modules to the istanbul ignore
 	for (i = 0; i < opts.tests.length; i++) {
 		if (opts.tests[i][0] !== '/' && opts.tests[i].substr(0, 2) !== '**') {
 			opts.istanbul.exclude.push('**/' + opts.tests[i]);
+		} else {
+			opts.istanbul.exclude.push(opts.tests[i]);
 		}
 	}
 	opts.istanbul.exclude.push('**/node_modules/**/*');
@@ -196,8 +206,6 @@ function defaults(options) {
 		}
 	);
 
-	opts.babel.exclude.push('**/node_modules/**/*');
-
 	opts.babelInclude = opts.babel.include;
 	opts.babelExclude = opts.babel.exclude;
 
@@ -211,6 +219,8 @@ function defaults(options) {
 	if (!_.isArray(opts.babelExclude)) {
 		opts.babelExclude = [opts.babelExclude];
 	}
+
+	opts.babelExclude.push('**/node_modules/**/*');
 
 	return _.cloneDeep(opts);
 }
