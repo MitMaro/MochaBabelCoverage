@@ -4,15 +4,15 @@
   "author": "Tim Oram <mitmaro@gmail.com>",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/MitMaro/MochaJSXRunner/issues"
+    "url": "https://github.com/MitMaro/MochaBabelCoverage/issues"
   },
-  "homepage": "https://github.com/MitMaro/MochaJSXRunner",
+  "homepage": "https://github.com/MitMaro/MochaBabelCoverage",
   "repository": {
     "type": "git",
-    "url": "https://github.com/MitMaro/MochaJSXRunner"
+    "url": "https://github.com/MitMaro/MochaBabelCoverage"
   },
   "description": "Run Mocha JSX tests with Istanbul coverage and sourcemaps.",
-  "main": "src/MochaJSXRunner.js",
+  "main": "src/runner-test.js",
   "dependencies": {
     "glob": "^5.0.5",
     "lodash": "^3.6.0",
