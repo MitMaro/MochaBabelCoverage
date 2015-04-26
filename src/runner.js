@@ -11,6 +11,7 @@ var minimatch = require('minimatch');
 var babel = require('babel');
 var Istanbul = require('istanbul');
 var Mocha = require('mocha');
+var run;
 
 function padRight(str, length) {
 	return str + Array(length - str.length + 1).join(' ');
@@ -170,6 +171,7 @@ function initModuleRequire(instrumenter, sourceStore, options) {
 function defaults(options) {
 	var i;
 	var opts = {};
+
 	opts.tests = options.tests? options.tests: ['test/**/*.js'];
 	opts.istanbul = _.defaults({}, options.istanbul, {
 		directory: 'coverage',
@@ -196,7 +198,8 @@ function defaults(options) {
 	for (i = 0; i < opts.tests.length; i++) {
 		if (opts.tests[i][0] !== '/' && opts.tests[i].substr(0, 2) !== '**') {
 			opts.istanbul.exclude.push('**/' + opts.tests[i]);
-		} else {
+		}
+		else {
 			opts.istanbul.exclude.push(opts.tests[i]);
 		}
 	}
@@ -253,12 +256,11 @@ function defaults(options) {
 	return _.cloneDeep(opts);
 }
 
-var run = function run(options) {
+run = function run(options) {
 	var mocha;
 	var istanbulCallback;
 	var instrumenter;
 	var collector;
-	var mocha;
 	var sourceStore = Istanbul.Store.create('memory');
 	var opts = defaults(options);
 
@@ -273,6 +275,6 @@ var run = function run(options) {
 	);
 
 	mocha.run(istanbulCallback);
-}
+};
 
 module.exports = run;

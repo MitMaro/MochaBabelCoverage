@@ -1,3 +1,4 @@
+/* eslint-disable no-console,no-process-exit */
 'use strict';
 
 var fs = require('fs');
@@ -14,7 +15,7 @@ var argv = yargs
 		type: 'string',
 		default: '.mbc.js'
 	})
-	.version(function() {
+	.version(function version() {
 		return 'Mocha Babel Coverage (mbc) \nv' + packageJson.version;
 	})
 	.help('h')
@@ -23,16 +24,19 @@ var argv = yargs
 
 var configFile = path.resolve(argv.config);
 
-fs.access(configFile, fs.R_OK, function(err) {
+fs.access(configFile, fs.R_OK, function fsAccess(err) {
 	var options;
+
 	if (err) {
 		console.log('Error reading configuration file: ' + argv.config);
 		console.log('Using default config');
 		options = {};
-	} else {
+	}
+	else {
 		try {
 			options = require(configFile);
-		} catch(e) {
+		}
+		catch (e) {
 			console.log('Error loading configuration file: ' + argv.config);
 			process.exit(1);
 		}
