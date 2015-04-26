@@ -1,0 +1,17 @@
+language: node_js
+node_js:
+  - "0.10"
+  - "0.12"
+  - "iojs"
+before_script:
+  - npm install coveralls
+  - npm install mocha@2 babel@5 istanbul@0.3
+script:
+  - ./node_modules/.bin/istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec test/runner-test.js
+after_success:
+  - cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rm -rf ./coverage
+env:
+  global:
+    - secure: e/8M6PFtQAAO/4gFnhoGhBFPWK1e4JHH4FXX6aoMcd7sNPU64WoKNghO7MQBL4HILd5RiUdaEN+G4RHClWYBhcgBmb42ybJ/e23/zxTajD0sa5s3fGHuGvRc565fXN/yuezDJ9JZRhZmQQyGZq1m8bi++V9xTIlonlvYpeyYWDA=
+    - secure: BHpw9YPgT+OK89KW5JeRhTnlkRc4KlwGgq92F7aMyituylPuhbmu8/7i7lO6Zdhge9k3enr+KDYNmvCsqurh1XNmKbrpqaYtyait5XOVzfT3cLYDSJ3Ob+aNpQftCVD0+4KEeXVfctTRBEDXGzgLQ5JGwf7YSCIMzITBFM32gAU=
+sudo: false
