@@ -2,6 +2,7 @@
 
 var _ = require('lodash');
 var fs = require('fs');
+var path = require('path');
 var Module = require('module');
 var SourceMapConsumer = require('source-map').SourceMapConsumer;
 var glob = require('glob');
@@ -98,10 +99,14 @@ function addSourceComments(source) {
 	return output.join('\n');
 }
 
-function initMocha(mocha, testGlobs) {
+function initMocha(mocha, testGlobs, options) {
 	var i;
 	var j;
 	var files;
+
+	for (i = 0; i < options.require.length; i++) {
+		require(options.require[i]);
+	}
 
 	for (i = 0; i < testGlobs.length; i++) {
 		files = glob.sync(testGlobs[i]);
@@ -197,7 +202,29 @@ function defaults(options) {
 	}
 	opts.istanbul.exclude.push('**/node_modules/**/*');
 
-	opts.mocha = _.defaults({}, options.mocha);
+	opts.mocha = _.defaults({}, options.mocha, {
+		require: []
+	});
+
+	if (!_.isArray(opts.mocha.require)) {
+		opts.mocha.require = [opts.mocha.require];
+	}
+
+	for (i = 0; i < opts.mocha.require.length; i++) {
+		opts.mocha.require[i] = path.resolve(opts.mocha.require[i]);
+	}
+
+	// convert greps to regex
+	if (opts.mocha.grep) {
+		if (!_.isArray(opts.mocha.grep)) {
+			opts.mocha.grep = [opts.mocha.grep];
+		}
+		for (i = 0; i < opts.mocha.grep.length; i++) {
+			if (!_.isRegExp(opts.mocha.grep[i])) {
+				opts.mocha.grep[i] = new RegExp(opts.mocha.grep[i]);
+			}
+		}
+	}
 	
 	opts.babel = _.defaults({
 			sourceMap: 'inline'
@@ -239,7 +266,7 @@ var run = function run(options) {
 	collector = new Istanbul.Collector(opts.istanbul.collector);
 	mocha = new Mocha(opts.mocha);
 
-	initMocha(mocha, opts.tests);
+	initMocha(mocha, opts.tests, opts.mocha);
 	initModuleRequire(instrumenter, sourceStore, opts);
 	istanbulCallback = initIstanbulCallback(
 		sourceStore, collector, opts

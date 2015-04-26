@@ -4,7 +4,7 @@
 var fs = require('fs');
 var path = require('path');
 var rewire = require('rewire');
-var MochaJSXRunner = rewire('../src/MochaJSXRunner');
+var MochaJSXRunner = rewire('../src/runner');
 
 describe('Mocha JSX Runner', function() {
 	var sourceStoreStub;
@@ -17,8 +17,8 @@ describe('Mocha JSX Runner', function() {
 	var reporterStub;
 	var ModuleStub;
 	var fsStub;
+	var pathStub;
 	var babelStub;
-
 
 	beforeEach(function() {
 		sourceStoreStub = {
@@ -68,6 +68,10 @@ describe('Mocha JSX Runner', function() {
 			transform: sinon.stub()
 		};
 
+		pathStub = {
+			resolve: sinon.stub().returnsArg(0)
+		};
+
 		fsStub = {
 			readFileSync: sinon.stub()
 		};
@@ -78,6 +82,7 @@ describe('Mocha JSX Runner', function() {
 		MochaJSXRunner.__set__('Module', ModuleStub);
 		MochaJSXRunner.__set__('babel', babelStub);
 		MochaJSXRunner.__set__('fs', fsStub);
+		MochaJSXRunner.__set__('path', pathStub);
 	});
 
 	describe('#padRight', function() {
@@ -143,7 +148,9 @@ describe('Mocha JSX Runner', function() {
 			GlobStub.sync.onCall(0).returns(['a', 'b']);
 			GlobStub.sync.onCall(1).returns(['c',]);
 
-			var result = initMocha(mochaStub, globs);
+			var result = initMocha(mochaStub, globs, {
+				require: []
+			});
 
 			expect(GlobStub.sync).to.be.calledWith(globs[0]);
 			expect(GlobStub.sync).to.be.calledWith(globs[1]);
@@ -155,7 +162,9 @@ describe('Mocha JSX Runner', function() {
 
 		it('should accept no globs', function() {
 			var globs = [];
-			var result = initMocha(mochaStub, globs);
+			var result = initMocha(mochaStub, globs, {
+				require: []
+			});
 
 			expect(GlobStub.sync).to.not.be.called;
 			expect(mochaStub.addFile).to.not.be.called;
@@ -172,10 +181,35 @@ describe('Mocha JSX Runner', function() {
 
 			GlobStub.sync.onCall(0).returns([]);
 
-			var result = initMocha(mochaStub, globs);
+			var result = initMocha(mochaStub, globs, {
+				require: []
+			});
 
 			expect(GlobStub.sync).to.be.calledWith(globs[0]);
 			expect(mochaStub.addFile).to.not.be.called;
+			expect(result).to.eql(mochaStub);
+		});
+
+		it('should require files', function() {
+			// mocking require is not fun....
+			var requireStub = sinon.stub().returns('foo content');
+			var globs = [
+				'ab'
+			];
+			var opts = {
+				foo: 'bar'
+			};
+
+			GlobStub.sync.onCall(0).returns([]);
+
+			require.extensions['.dummy'] = requireStub;
+			var result = initMocha(mochaStub, globs, {
+				require: [
+					path.resolve(__dirname + '/files/dummy.dummy')
+				]
+			});
+
+			expect(requireStub).to.be.called;
 			expect(result).to.eql(mochaStub);
 		});
 	});
@@ -355,7 +389,9 @@ describe('Mocha JSX Runner', function() {
 						'**/node_modules/**/*'
 					]
 				},
-				mocha: {},
+				mocha: {
+					"require": []
+				},
 				babel: {
 					sourceMap: 'inline'
 				},
@@ -467,7 +503,36 @@ describe('Mocha JSX Runner', function() {
 			});
 
 			expect(opts.mocha).to.eql({
-				foo: 'bar'
+				foo: 'bar',
+				require: []
+			});
+		});
+
+		it('should override mocha require as string', function() {
+			var opts = defaults({
+				mocha: {
+					foo: 'bar',
+					require: 'foo'
+				}
+			});
+
+			expect(opts.mocha).to.eql({
+				foo: 'bar',
+				require: ['foo']
+			});
+		});
+
+		it('should override mocha require as array', function() {
+			var opts = defaults({
+				mocha: {
+					foo: 'bar',
+					require: ['foo', 'bar']
+				}
+			});
+
+			expect(opts.mocha).to.eql({
+				foo: 'bar',
+				require: ['foo', 'bar']
 			});
 		});
 
@@ -482,6 +547,26 @@ describe('Mocha JSX Runner', function() {
 				sourceMap: 'inline',
 				foo: 'value'
 			});
+		});
+
+		it('should convert grep string to array', function() {
+			var opts = defaults({
+				mocha : {
+					grep: 'value'
+				}
+			});
+
+			expect(opts.mocha.grep).to.eql([/value/]);
+		});
+
+		it('should not convert grep regexs', function() {
+			var opts = defaults({
+				mocha : {
+					grep: [/value/]
+				}
+			});
+
+			expect(opts.mocha.grep).to.eql([/value/]);
 		});
 	});
 

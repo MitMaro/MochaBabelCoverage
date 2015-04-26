@@ -1,5 +1,5 @@
 {
-  "name": "mocha-jsx-runner",
+  "name": "mocha-babel-coverage",
   "version": "0.0.1",
   "author": "Tim Oram <mitmaro@gmail.com>",
   "license": "ISC",
@@ -17,7 +17,8 @@
     "glob": "^5.0.5",
     "lodash": "^3.6.0",
     "minimatch": "^2.0.4",
-    "source-map": "^0.4.2"
+    "source-map": "^0.4.2",
+    "yargs": "^3.8.0"
   },
   "devDependencies": {
     "chai": "^2.2.0",
@@ -31,7 +32,7 @@
     "istanbul": "0.3.x"
   },
   "scripts": {
-    "test": "istanbul cover -- ./node_modules/.bin/_mocha test/MochaJSXRunner-test.js"
+    "test": "istanbul cover -- ./node_modules/.bin/_mocha test/runner-test.js"
   },
   "keywords": [
     "Mocha",
