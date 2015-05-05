@@ -136,9 +136,15 @@ function initIstanbulCallback(sourceStore, collector, options) {
 }
 
 function initModuleRequire(instrumenter, sourceStore, options) {
+	var files = {};
 	Module._extensions['.js'] = function moduleExtension(module, filename) {
+		var src = files[filename];
+		if (src) {
+			return module._compile(src, filename);
+		}
+
 		var matcher = minimatch.bind(null, filename);
-		var src = fs.readFileSync(filename, {
+		src = fs.readFileSync(filename, {
 			encoding: 'utf8'
 		});
 
@@ -163,6 +169,7 @@ function initModuleRequire(instrumenter, sourceStore, options) {
 				throw new Error('Error during istanbul instrument - ' + filename + ': \n' + e.message);
 			}
 		}
+		files[filename] = src;
 		module._compile(src, filename);
 	};
 	return Module._extensions['.js'];
