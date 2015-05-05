@@ -28,8 +28,8 @@ fs.access(configFile, fs.R_OK, function fsAccess(err) {
 	var options;
 
 	if (err) {
-		console.log('Error reading configuration file: ' + argv.config);
-		console.log('Using default config');
+		console.error('Error reading configuration file: ' + argv.config);
+		console.error('Using default config');
 		options = {};
 	}
 	else {
@@ -37,7 +37,7 @@ fs.access(configFile, fs.R_OK, function fsAccess(err) {
 			options = require(configFile);
 		}
 		catch (e) {
-			console.log('Error loading configuration file: ' + argv.config);
+			console.error('Error loading configuration file: ' + argv.config);
 			process.exit(1);
 		}
 	}
